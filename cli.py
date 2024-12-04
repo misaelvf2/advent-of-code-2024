@@ -1,13 +1,13 @@
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import typer
 
 
 def create_day_cli(
     day_number: int,
-    input_parser: Callable[[str], Tuple[List[int], List[int]]],
-    part1: Callable[[List[int], List[int]], int],
-    part2: Callable[[List[int], List[int]], int],
+    input_parser: Callable,
+    part1: Callable,
+    part2: Callable,
 ) -> typer.Typer:
     """
     Creates a Typer app for a specific day with a 'run' command.
@@ -60,24 +60,24 @@ def create_day_cli(
                 raise typer.Exit(code=1)
             try:
                 if part == 1:
-                    result = part1(*parsed_input)
+                    result = part1(parsed_input)
                     typer.echo(f"Day {day_number} Part 1 result = {result}")
                 elif part == 2:
-                    result = part2(*parsed_input)
+                    result = part2(parsed_input)
                     typer.echo(f"Day {day_number} Part 2 result = {result}")
             except Exception as e:
                 typer.echo(f"Error executing Part {part}: {e}", err=True)
                 raise typer.Exit(code=1)
         else:
             try:
-                result1 = part1(*parsed_input)
+                result1 = part1(parsed_input)
                 typer.echo(f"Day {day_number} Part 1 result = {result1}")
             except Exception as e:
                 typer.echo(f"Error executing Part 1: {e}", err=True)
                 raise typer.Exit(code=1)
 
             try:
-                result2 = part2(*parsed_input)
+                result2 = part2(parsed_input)
                 typer.echo(f"Day {day_number} Part 2 result = {result2}")
             except Exception as e:
                 typer.echo(f"Error executing Part 2: {e}", err=True)
