@@ -50,10 +50,6 @@ def gradually_decreasing(x, y, lower_limit, upper_limit):
     return lower_limit <= y - x <= upper_limit
 
 
-def adjacent_diffs(report):
-    return [report[i] - report[i - 1] for i in range(len(report)) if i > 0]
-
-
 app = create_day_cli(day_number=2, input_parser=parse_input, part1=part1, part2=part2)
 
 if __name__ == "__main__":
