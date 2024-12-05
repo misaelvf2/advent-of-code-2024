@@ -1,13 +1,13 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import typer
 
 
 def create_day_cli(
     day_number: int,
-    input_parser: Callable,
-    part1: Callable,
-    part2: Callable,
+    input_parser: Callable[..., Any],
+    part1: Callable[..., Any],
+    part2: Callable[..., Any],
 ) -> typer.Typer:
     """
     Creates a Typer app for a specific day with a 'run' command.
@@ -54,33 +54,37 @@ def create_day_cli(
             typer.echo(f"Error parsing input: {ve}", err=True)
             raise typer.Exit(code=1)
 
+        def execute_part(part_func: Callable[..., Any], part_num: int):
+            try:
+                # Determine how to call the part function
+                if isinstance(parsed_input, (list, tuple)):
+                    result = part_func(*parsed_input)
+                elif isinstance(parsed_input, dict):
+                    result = part_func(**parsed_input)
+                else:
+                    result = part_func(parsed_input)
+                typer.echo(f"Day {day_number} Part {part_num} result = {result}")
+            except TypeError as te:
+                typer.echo(
+                    f"TypeError executing Part {part_num}: {te}. "
+                    f"Check the number and type of arguments.",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+            except Exception as e:
+                typer.echo(f"Error executing Part {part_num}: {e}", err=True)
+                raise typer.Exit(code=1)
+
         if part is not None:
             if part not in (1, 2):
                 typer.echo("Invalid part number. Choose 1 or 2.", err=True)
                 raise typer.Exit(code=1)
-            try:
-                if part == 1:
-                    result = part1(parsed_input)
-                    typer.echo(f"Day {day_number} Part 1 result = {result}")
-                elif part == 2:
-                    result = part2(parsed_input)
-                    typer.echo(f"Day {day_number} Part 2 result = {result}")
-            except Exception as e:
-                typer.echo(f"Error executing Part {part}: {e}", err=True)
-                raise typer.Exit(code=1)
+            if part == 1:
+                execute_part(part1, 1)
+            elif part == 2:
+                execute_part(part2, 2)
         else:
-            try:
-                result1 = part1(parsed_input)
-                typer.echo(f"Day {day_number} Part 1 result = {result1}")
-            except Exception as e:
-                typer.echo(f"Error executing Part 1: {e}", err=True)
-                raise typer.Exit(code=1)
-
-            try:
-                result2 = part2(parsed_input)
-                typer.echo(f"Day {day_number} Part 2 result = {result2}")
-            except Exception as e:
-                typer.echo(f"Error executing Part 2: {e}", err=True)
-                raise typer.Exit(code=1)
+            execute_part(part1, 1)
+            execute_part(part2, 2)
 
     return app
