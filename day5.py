@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from functools import total_ordering
 
 from cli import create_day_cli
 
@@ -79,6 +80,40 @@ def topological_sort(graph):
     if len(sorted_order) == len(graph):
         return sorted_order
     return None
+
+
+def part1_total_ordering(updates):
+    result = 0
+    for update in updates:
+        pages = [Page(x) for x in update]
+        result += pages[len(pages) // 2] if sorted(pages, reverse=False) == pages else 0
+    return result
+
+
+def part2_total_ordering(updates):
+    result = 0
+    for update in updates:
+        pages = [Page(x) for x in update]
+        sorted_pages = sorted(pages)
+        result += sorted_pages[len(pages) // 2] if sorted_pages != pages else 0
+    return result
+
+
+@total_ordering
+class Page(int):
+    ordering_rules = parse_input("data/day5.txt")[0]
+
+    def __new__(cls, page_number: int):
+        return super().__new__(cls, page_number)
+
+    def __eq__(self, other):
+        return int(self) == int(other)
+
+    def __lt__(self, other):
+        return int(self) not in Page.ordering_rules[int(other)]
+
+    def __repr__(self):
+        return str(int(self))
 
 
 app = create_day_cli(day_number=5, input_parser=parse_input, part1=part1, part2=part2)
