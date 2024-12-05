@@ -48,8 +48,9 @@ def valid_update(rules, update):
 def build_dependency_graph(rules, update):
     graph = defaultdict(list)
     for page in update:
+        update_set = set(update)
         for comes_after in rules[page]:
-            if comes_after in set(update):
+            if comes_after in update_set:
                 graph[page].append(comes_after)
                 if comes_after not in graph:
                     # Need to explicitly add nodes with no predecessors
