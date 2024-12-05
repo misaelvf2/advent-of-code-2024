@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from cli import create_day_cli
+# from cli import create_day_cli
 
 
 def parse_input(path):
@@ -60,7 +60,9 @@ def dfs(grid, word, i, j, direction, next_idx):
     return dfs(grid, word, i + direction[0], j + direction[1], direction, next_idx + 1)
 
 
-app = create_day_cli(day_number=4, input_parser=parse_input, part1=part1, part2=part2)
+# app = create_day_cli(day_number=4, input_parser=parse_input, part1=part1, part2=part2)
 
 if __name__ == "__main__":
-    app()
+    # app()
+    print(part1(parse_input("data/day4.txt")))
+    print(part2(parse_input("data/day4.txt")))
