@@ -86,7 +86,7 @@ def part1_total_ordering(updates):
     result = 0
     for update in updates:
         pages = [Page(x) for x in update]
-        result += pages[len(pages) // 2] if sorted(pages, reverse=False) == pages else 0
+        result += pages[len(pages) // 2] if sorted(pages) == pages else 0
     return result
 
 
