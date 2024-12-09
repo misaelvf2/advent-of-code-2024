@@ -32,12 +32,12 @@ def part1(grid, antennas):
         antinodes.update(
             {
                 node
-                for node in draw_line(*pair)
+                for node in draw_points(*pair)
                 if within_bounds(node, width=m, height=n)
             }
         )
 
-    visualize(grid, antinodes)
+    # visualize(grid, antinodes)
     return len(antinodes)
 
 
@@ -49,10 +49,7 @@ def visualize(grid, antinodes):
     print("")
 
 
-def draw_line(a: Point, b: Point):
-    # Add node at start of line
-    # The two antennas are at the center of the line
-    # Add node at end of line
+def draw_points(a: Point, b: Point):
     slope = compute_slope(a, b)
     run, rise = abs(slope.run), abs(slope.rise)
     match direction(slope):
@@ -81,8 +78,55 @@ def draw_line(a: Point, b: Point):
             start_antinode = Point(x=a.x + run, y=a.y - rise)
             end_antinode = Point(x=b.x - run, y=b.y + rise)
         case _:
-            return set()
+            return {}
     return {start_antinode, end_antinode}
+
+
+def draw_line(a: Point, b: Point, width, height):
+    result = {a, b}
+    slope = compute_slope(a, b)
+    run, rise = abs(slope.run), abs(slope.rise)
+    start_antinodes = end_antinodes = set()
+    match direction(slope):
+        case "←":
+            start_antinodes = set(generate_points(a, run, 0, width, height))
+            end_antinodes = set(generate_points(b, -run, 0, width, height))
+        case "→":
+            start_antinodes = set(generate_points(a, -run, 0, width, height))
+            end_antinodes = set(generate_points(b, run, 0, width, height))
+        case "↑":
+            start_antinodes = set(generate_points(a, 0, rise, width, height))
+            end_antinodes = set(generate_points(b, 0, -rise, width, height))
+        case "↓":
+            start_antinodes = set(generate_points(a, 0, -rise, width, height))
+            end_antinodes = set(generate_points(b, 0, rise, width, height))
+        case "↗":
+            start_antinodes = set(generate_points(a, -run, rise, width, height))
+            end_antinodes = set(generate_points(b, run, -rise, width, height))
+        case "↖":
+            start_antinodes = set(generate_points(a, run, rise, width, height))
+            end_antinodes = set(generate_points(b, -run, -rise, width, height))
+        case "↘":
+            start_antinodes = set(generate_points(a, -run, -rise, width, height))
+            end_antinodes = set(generate_points(b, run, rise, width, height))
+        case "↙":
+            start_antinodes = set(generate_points(a, run, -rise, width, height))
+            end_antinodes = set(generate_points(b, -run, rise, width, height))
+        case _:
+            return result
+    result.update(start_antinodes)
+    result.update(end_antinodes)
+    return result
+
+
+def generate_points(start, delta_x, delta_y, width, height):
+    current = start
+    while True:
+        current = Point(x=current.x + delta_x, y=current.y + delta_y)
+        if within_bounds(current, width, height):
+            yield current
+        else:
+            break
 
 
 def direction(slope: Slope):
@@ -105,7 +149,25 @@ def direction(slope: Slope):
 
 
 def part2(grid, antennas):
-    pass
+    antinodes = set()
+    antenna_pairs = [
+        (p1, p2)
+        for (p1, p2) in combinations(antennas, 2)
+        if grid[p1.y][p1.x] == grid[p2.y][p2.x]
+    ]
+
+    n, m = len(grid), len(grid[0])
+    for pair in antenna_pairs:
+        antinodes.update(
+            {
+                node
+                for node in draw_line(*pair, m, n)
+                if within_bounds(node, width=m, height=n)
+            }
+        )
+
+    # visualize(grid, antinodes)
+    return len(antinodes)
 
 
 def compute_slope(start: Point, end: Point) -> Slope:
