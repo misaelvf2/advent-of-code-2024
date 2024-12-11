@@ -1,102 +1,81 @@
-from typing import Optional
-
 # from cli import create_day_cli
 
 
-class Node:
-    def __init__(
-        self,
-        data: tuple[int, int] | tuple[int, str],
-        next: Optional["Node"] = None,
-        prev: Optional["Node"] = None,
-    ):
-        self.data = data
-        self.next = next
-        self.prev = prev
-
-
 def parse_input(path):
-    head = tail = current = None
-    _id = 0
+    fs_layout = []
     with open(path) as f:
+        _id = 0
         for i, c in enumerate(f.read()):
-            val = (0, ".")
             for k in range(int(c)):
-                val = (i + k, _id) if i % 2 == 0 else (i, ".")
-                if not current:
-                    current = Node(val)
-                    head = current
-                else:
-                    current.next = Node(val)
-                    current.next.prev = current
-                    current = current.next
-            if val[1] == _id:
-                _id += 1
-    tail = current
-    return head, tail
+                fs_layout.append(_id if i % 2 == 0 else ".")
+            _id += 1 if i % 2 == 0 else 0
+        return fs_layout
 
 
-def part1(head, tail):
-    # print_list(head, reverse=False)
-    p, q = next(free_blocks(head)), next(occupied_blocks(tail))
-    i, j = (
-        head.data[0] if head else float("inf"),
-        tail.data[0] if tail else float("-inf"),
-    )
-    while i < j:
-        p.data, q.data = (
-            (p.data[0], q.data[1]),
-            (q.data[0], p.data[1]),
-        )
-        p, q = next(free_blocks(p)), next(occupied_blocks(q))
-        i, j = p.data[0] if p else float("inf"), q.data[0] if q else float("-inf")
-    return checksum(head)
+def part1(fs_layout):
+    i = next(file_blocks(fs_layout))
+    j, _ = next(free_blocks(fs_layout))
+    while i > j:
+        fs_layout[i], fs_layout[j] = fs_layout[j], fs_layout[i]
+        i = next(file_blocks(fs_layout))
+        j, _ = next(free_blocks(fs_layout))
+    return checksum(fs_layout)
 
 
-def part2(*args, **kwargs):
-    pass
+def part2(fs_layout):
+    for i, file_size in files(fs_layout):
+        for j, free_size in free_blocks(fs_layout):
+            if j < i and free_size >= file_size:
+                for k in range(file_size):
+                    fs_layout[i + k], fs_layout[j + k] = (
+                        fs_layout[j + k],
+                        fs_layout[i + k],
+                    )
+                break
+    return checksum(fs_layout)
 
 
-def print_list(head: Optional[Node], reverse: bool = False):
-    while head:
-        print(head.data[1], end="")
-        head = head.next if not reverse else head.prev
-    print("")
+def print_fs(fs_layout):
+    print("".join(str(x) for x in fs_layout))
 
 
-def free_blocks(head: Optional[Node]):
-    while True:
-        if not head:
-            break
-        if head.data[1] == ".":
-            yield head
-        head = head.next
+def checksum(fs_layout):
+    return sum(i * fid for (i, fid) in enumerate(fs_layout) if fid != ".")
 
 
-def occupied_blocks(tail: Optional[Node]):
-    while True:
-        if not tail:
-            break
-        if tail.data[1] != ".":
-            yield tail
-        tail = tail.prev
+def files(fs_layout):
+    i = len(fs_layout) - 1
+    while i >= 0:
+        if fs_layout[i] != ".":
+            start = i
+            while i >= 0 and fs_layout[i] == fs_layout[start]:
+                i -= 1
+            yield (i + 1, start - i)
+        else:
+            i -= 1
 
 
-def checksum(head: Optional[Node]):
-    result = 0
-    idx = 0
-    while head:
-        _, val = head.data
-        if isinstance(val, int):
-            result += idx * val
-        head = head.next
-        idx += 1
-    return result
+def file_blocks(fs_layout):
+    for i, file_block in enumerate(reversed(fs_layout)):
+        if file_block != ".":
+            yield len(fs_layout) - 1 - i
 
 
-# app = create_day_cli(day_number=7, input_parser=parse_input, part1=part1, part2=part2)
+def free_blocks(fs_layout):
+    i = 0
+    while i < len(fs_layout):
+        if fs_layout[i] == ".":
+            start = i
+            while i < len(fs_layout) and fs_layout[i] == ".":
+                i += 1
+            yield (start, i - start)
+        else:
+            i += 1
+
+
+# app = create_day_cli(day_number=9, input_parser=parse_input, part1=part1, part2=part2)
 
 if __name__ == "__main__":
     # app()
-    print(part1(*parse_input("data/day9.txt")))
-    print(part2(*parse_input("data/day9.txt")))
+    print(part1(parse_input("data/day9.txt")))
+    print(part2(parse_input("data/day9.txt")))
