@@ -1,3 +1,5 @@
+# from cli import create_day_cli
+
 DIRECTIONS = [(0, -1), (-1, 0), (+1, 0), (0, +1)]
 
 
@@ -7,7 +9,10 @@ def parse_input(path):
         for line in f:
             top_map.append([])
             for c in line.strip():
-                top_map[-1].append(int(c))
+                try:
+                    top_map[-1].append(int(c))
+                except ValueError:
+                    top_map[-1].append(10)
     return top_map
 
 
@@ -49,11 +54,34 @@ def gradually_uphill(i, j, p, q, top_map):
 
 
 def part2(top_map):
-    pass
+    result = 0
+    reachable = {}
+
+    def dfs(i, j):
+        if top_map[i][j] == 9:
+            return 1
+        if (i, j) in reachable:
+            return reachable[(i, j)]
+        rating = 0
+        for d in DIRECTIONS:
+            next_i, next_j = i + d[0], j + d[1]
+            if gradually_uphill(i, j, next_i, next_j, top_map):
+                rating += dfs(next_i, next_j)
+        reachable[(i, j)] = rating
+        return rating
+
+    for i, line in enumerate(top_map):
+        for j, height in enumerate(line):
+            if height == 0:
+                rating = dfs(i, j)
+                result += rating
+
+    return result
 
 
-# app = create_day_cli(day_number=7, input_parser=parse_input, part1=part1, part2=part2)
+# app = create_day_cli(day_number=1, input_parser=parse_input, part1=part1, part2=part2)
 
 if __name__ == "__main__":
+    # app()
     print(part1(parse_input("data/day10.txt")))
-    # print(part2(*parse_input("data/day9.txt")))
+    print(part2(parse_input("data/day10.txt")))
