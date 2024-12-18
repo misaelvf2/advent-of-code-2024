@@ -15,8 +15,8 @@ def parse_input(path):
     return [tuple(map(int, line.split(","))) for line in open(path).readlines()]
 
 
-def part1(coordinates: list[tuple[int, int]]):
-    memory_space = create_memory_space(coordinates, bytes=1024)
+def part1(coordinates: list[tuple[int, int]], bytes: int = 1024):
+    memory_space = create_memory_space(coordinates, bytes=bytes)
     start = Point(0, 0)
     goal = Point(70, 70)
 
@@ -32,9 +32,21 @@ def part1(coordinates: list[tuple[int, int]]):
         for neighbor in neighbors(memory_space, current):
             queue.append((neighbor, steps + 1))
 
+    return None
+
 
 def part2(coordinates: list[tuple[int, int]]):
-    pass
+    low, high = 0, len(coordinates)
+    while low < high:
+        mid = (high + low) // 2
+        print(low, mid, high)
+        too_low = True if part1(coordinates, bytes=mid) is not None else False
+        if too_low:
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return coordinates[low - 1]
 
 
 def create_memory_space(coordinates, bytes):
@@ -77,5 +89,5 @@ def translate(current: Point, direction: Direction):
 
 
 if __name__ == "__main__":
-    print(part1(parse_input("data/day18.txt")))
+    # print(part1(parse_input("data/day18.txt")))
     print(part2(parse_input("data/day18.txt")))
