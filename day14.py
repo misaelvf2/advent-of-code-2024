@@ -1,5 +1,4 @@
 import math
-import pprint
 from collections import defaultdict, namedtuple
 
 Robot = namedtuple("Robot", ["x_pos", "y_pos", "x_vel", "y_vel"])
@@ -29,15 +28,49 @@ def part1(robots: list[Robot], ticks: int = 100, width: int = 101, height: int =
         )
     per_quadrant = defaultdict(list)
     for position in positions:
-        # result = quadrant(position, (width, height))
-        # pprint.pprint(f"{position} is in {result} quadrant")
         per_quadrant[quadrant(position, (width, height))].append(position)
-    # draw_grid(positions, (width, height))
     return math.prod(len(v) for (k, v) in per_quadrant.items() if k != "middle")
 
 
-def part2(robots: list[Robot]):
-    pass
+def part2(
+    robots: list[Robot], ticks: int = 10_000, width: int = 101, height: int = 103
+):
+    positions = [
+        (robot.x_pos, robot.y_pos, robot.x_vel, robot.y_vel) for robot in robots
+    ]
+
+    minimum_safety_factor = (math.inf, None)
+    for i in range(ticks):
+        for j, position in enumerate(positions):
+            positions[j] = (
+                *translate(
+                    1,
+                    (position[0], position[1]),
+                    (position[2], position[3]),
+                    (width, height),
+                ),
+                position[2],
+                position[3],
+            )
+
+        per_quadrant = defaultdict(list)
+        for position in positions:
+            per_quadrant[quadrant((position[0], position[1]), (width, height))].append(
+                position
+            )
+
+        minimum_safety_factor = min(
+            minimum_safety_factor, (safety_factor(per_quadrant), i + 1)
+        )
+    return minimum_safety_factor
+
+
+def safety_factor(robots_per_quadrant):
+    return math.prod(len(v) for (k, v) in robots_per_quadrant.items() if k != "middle")
+
+
+def distance(p1, p2):
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
 
 def translate(
@@ -46,9 +79,6 @@ def translate(
     velocity: tuple[int, int],
     dimensions: tuple[int, int],
 ) -> tuple[int, int]:
-    # final_x = (position[0] + velocity[0] * ticks) % dimensions[0]
-    # final_y = (position[1] + velocity[1] * ticks) % dimensions[1]
-    # pprint.pprint(f"{position} moving at {velocity} ends up at ({final_x}, {final_y})")
     return (
         (position[0] + velocity[0] * ticks) % dimensions[0],
         (position[1] + velocity[1] * ticks) % dimensions[1],
@@ -69,11 +99,12 @@ def quadrant(position: tuple[int, int], dimensions: tuple[int, int]):
 
 
 def draw_grid(positions: list[tuple[int, int]], dimensions: tuple[int, int]):
-    grid = [["." for _ in range(dimensions[0])] for _ in range(dimensions[1])]
+    grid = [[" " for _ in range(dimensions[0])] for _ in range(dimensions[1])]
 
     for x, y in positions:
-        grid[y][x] = "1" if grid[y][x] == "." else str(int(grid[y][x]) + 1)
+        grid[y][x] = "X"
 
+    print("\033c", end="")
     for row in grid:
         print("".join(c for c in row))
 

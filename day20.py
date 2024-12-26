@@ -27,53 +27,30 @@ def parse_input(path):
 
 
 def part1(racetrack: list[list[str]], start: Point, end: Point, savings: int = 100):
-    # Perform an initial DFS, storing the time it takes to get from each coordinate
-    # to the end position. Do not use any cheats yet.
-    # Then, look for all the valid cheat positions, and compute the saved time
-    # using the previously-computed times as a range query.
-    completion_times = {}
-    seen = set()
-
-    baseline = 0
-    current = start
-    while current is not None and current != end:
-        seen.add(current)
-        current = next_move(current, racetrack, seen)
-        baseline += 1
-
-    seen = set()
-    current = start
-    i = 0
-    while current is not None and current != end:
-        completion_times[current] = baseline - i
-        seen.add(current)
-        current = next_move(current, racetrack, seen)
-        i += 1
-
-    completion_times[end] = 0
-
-    cheat_savings = defaultdict(int)
-    seen = set()
-    best_cheat = (float("-inf"), None)
-    for current in completion_times.keys():
-        if current not in seen:
-            seen.add(current)
-            for start, end in valid_cheats(current, racetrack, seen):
-                saved = completion_times[current] - completion_times[end] - 2
-                if saved > 0:
-                    print(f"Saved {saved} picoseconds by taking cheat ({start}, {end})")
-                    cheat_savings[saved] += 1
-                    best_cheat = max(best_cheat, (saved, (start, end)))
-                    # visualize(racetrack, (start, end))
-
-    print(f"{baseline=}")
-    print(f"Best cheat: {best_cheat[1]}, saving {best_cheat[0]} picoseconds")
-    visualize(racetrack, (best_cheat[1][0], best_cheat[1][1]))
-    return sum(v for k, v in cheat_savings.items() if k >= 100)
-
-
-def part2(racetrack: list[list[str]], start: Point, end: Point, savings: int = 100):
     pass
+
+
+def part2(
+    racetrack: list[list[str]], start: Point, end: Point, minimum_savings: int = 100
+):
+    completion_times = compute_completion_times(racetrack, start, end)
+
+    time_saved = defaultdict(int)
+    unique_cheats = set()
+    visited = set()
+    for position, _ in completion_times.items():
+        for _, cheat_end, cheat_length in cheats(
+            racetrack, completion_times.keys(), position, visited, maximum_depth=20
+        ):
+            if (position, cheat_end) in unique_cheats:
+                continue
+            unique_cheats.add((position, cheat_end))
+            saved = (
+                completion_times[position] - completion_times[cheat_end] - cheat_length
+            )
+            if saved > 0:
+                time_saved[saved] += 1
+    return sum([v for k, v in time_saved.items() if k >= minimum_savings])
 
 
 def visualize(racetrack, cheat):
@@ -88,37 +65,72 @@ def visualize(racetrack, cheat):
     racetrack[end.y][end.x] = original_end
 
 
-def valid_cheats(current: Point, racetrack: list[list[str]], seen: set):
-    def valid(p: Point, cheat_start: bool):
-        if cheat_start:
-            return (
-                p not in seen
-                and (0 <= p.x < len(racetrack[0]))
-                and (0 <= p.y < len(racetrack))
-                and (racetrack[p.y][p.x] == "#")
-            )
-        else:
-            return (
-                p not in seen
-                and (0 <= p.x < len(racetrack[0]))
-                and (0 <= p.y < len(racetrack))
-                and (racetrack[p.y][p.x] != "#")
-            )
+def cheats(racetrack, positions, current, visited, maximum_depth: int = 20):
+    def valid_cheat_start(p):
+        return (
+            0 <= p.x < len(racetrack[0])
+            and 0 <= p.y < len(racetrack)
+            and racetrack[p.y][p.x] == "#"
+        )
+
+    def valid_cheat_end(p):
+        return (
+            p not in visited
+            and 0 <= p.x < len(racetrack[0])
+            and 0 <= p.y < len(racetrack)
+            and racetrack[p.y][p.x] != "#"
+        )
 
     for direction in Direction:
         cheat_start = move(current, direction)
-        cheat_end = move(cheat_start, direction)
-        if valid(cheat_start, cheat_start=True) and valid(cheat_end, cheat_start=False):
-            yield (cheat_start, cheat_end)
+        if valid_cheat_start(cheat_start):
+            cheat_ends = [
+                x
+                for x in positions
+                if manhattan_distance(current, x) <= maximum_depth
+                and valid_cheat_end(x)
+            ]
+            for cheat_end in cheat_ends:
+                yield (
+                    cheat_start,
+                    cheat_end,
+                    manhattan_distance(current, cheat_end),
+                )
 
 
-def next_move(current: Point, racetrack: list[list[str]], seen: set[Point]):
-    def valid(p: Point):
+def closest(current, end):
+    positions = [move(current, direction) for direction in Direction]
+    positions.sort(key=lambda x: manhattan_distance(x, end))
+    for position in positions:
+        yield position
+
+
+def manhattan_distance(p1, p2):
+    return abs(p1.x - p2.x) + abs(p1.y - p2.y)
+
+
+def compute_completion_times(racetrack, start, end):
+    completion_times = {}
+    previous, current = None, start
+    i = 0
+    while current != end:
+        completion_times[current] = i
+        previous, current = current, next_position(racetrack, current, previous)
+        i += 1
+    baseline = i
+    completion_times[end] = baseline
+    for position, steps in completion_times.items():
+        completion_times[position] = baseline - steps
+    return completion_times
+
+
+def next_position(racetrack, current, previous):
+    def valid(p):
         return (
-            p not in seen
-            and (0 <= p.x < len(racetrack[0]))
-            and (0 <= p.y < len(racetrack))
-            and (racetrack[p.y][p.x] != "#")
+            p != previous
+            and 0 <= p.x < len(racetrack[0])
+            and 0 <= p.y < len(racetrack)
+            and racetrack[p.y][p.x] != "#"
         )
 
     for direction in Direction:
@@ -142,5 +154,5 @@ def move(current: Point, direction: Direction):
 
 
 if __name__ == "__main__":
-    print(part1(*parse_input("data/day20.txt")))
+    # print(part1(*parse_input("data/day20.txt")))
     print(part2(*parse_input("data/day20.txt")))

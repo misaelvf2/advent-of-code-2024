@@ -39,7 +39,6 @@ def part2(coordinates: list[tuple[int, int]]):
     low, high = 0, len(coordinates)
     while low < high:
         mid = (high + low) // 2
-        print(low, mid, high)
         too_low = True if part1(coordinates, bytes=mid) is not None else False
         if too_low:
             low = mid + 1
@@ -89,5 +88,5 @@ def translate(current: Point, direction: Direction):
 
 
 if __name__ == "__main__":
-    # print(part1(parse_input("data/day18.txt")))
+    print(part1(parse_input("data/day18.txt")))
     print(part2(parse_input("data/day18.txt")))
